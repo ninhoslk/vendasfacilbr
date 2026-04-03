@@ -2,83 +2,81 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ShieldAlert, Trash2, Mail, Phone, RefreshCw } from "lucide-react";
+import { ShieldAlert, Trash2, Mail, Phone, RefreshCw, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-const ADMIN_EMAIL = "brenoalves18110@gmail.com";
-
 export default function Admin() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [clientes, setClientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Segurança: Se não for admin, manda para a Home imediatamente
-  useEffect(() => {
-    if (user && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      navigate("/");
-    }
-  }, [user, navigate]);
-
   const carregarDados = async () => {
     setLoading(true);
-    try {
-      const snap = await getDocs(collection(db, "users"));
-      setClientes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    } catch (err) {
-      toast.error("Erro ao carregar dados.");
-    }
+    const snap = await getDocs(collection(db, "users"));
+    setClientes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     setLoading(false);
   };
 
-  const deletarCliente = async (id: string) => {
-    if (!window.confirm("Apagar conta? A pessoa perderá o acesso imediatamente.")) return;
-    try {
-      await deleteDoc(doc(db, "users", id));
-      toast.success("Usuário deletado!");
-      carregarDados();
-    } catch (err) {
-      toast.error("Erro ao deletar.");
-    }
-  };
+  useEffect(() => { carregarDados(); }, []);
 
-  useEffect(() => {
-    if (user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      carregarDados();
-    }
-  }, [user]);
-
-  if (user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return null;
+  if (user?.email !== 'brenoalves18110@gmail.com') return null;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between border-b pb-4">
-        <div className="flex items-center gap-3">
-          <ShieldAlert className="text-red-600 w-8 h-8" />
-          <h1 className="text-2xl font-bold">Painel de Clientes</h1>
+    <div className="max-w-5xl mx-auto space-y-6">
+      <div className="flex items-center justify-between bg-card p-6 rounded-3xl border shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-red-500 text-white rounded-2xl shadow-lg shadow-red-200">
+            <ShieldAlert size={32} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold uppercase tracking-widest text-red-600">Admin Control</h1>
+            <p className="text-muted-foreground">{clientes.length} vendedores cadastrados</p>
+          </div>
         </div>
-        <Button onClick={carregarDados} variant="outline" size="sm">
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+        <Button onClick={carregarDados} variant="outline" className="rounded-xl">
+          <RefreshCw className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {clientes.map((c) => (
-          <div key={c.id} className="bg-card p-4 rounded-xl border flex justify-between items-center shadow-sm">
-            <div>
-              <h3 className="font-bold">{c.fullName}</h3>
-              <p className="text-sm text-muted-foreground">{c.email}</p>
-              <p className="text-sm text-muted-foreground">{c.phone}</p>
+          <div key={c.id} className="bg-card p-5 rounded-3xl border shadow-sm hover:shadow-md transition-all flex flex-col gap-4 relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12" />
+            
+            <div className="flex items-center gap-4">
+              <img src={c.profilePic || `https://ui-avatars.com/api/?name=${c.fullName}`} className="w-16 h-16 rounded-full object-cover border-2 border-primary" />
+              <div>
+                <h3 className="font-bold text-lg">{c.fullName}</h3>
+                <div className="flex items-center gap-2">
+                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.themeColor || '#8b5cf6' }}></div>
+                   <span className="text-xs font-mono">{c.themeColor || '#8b5cf6'}</span>
+                </div>
+              </div>
             </div>
-            <Button variant="destructive" size="icon" onClick={() => deletarCliente(c.id)}>
-              <Trash2 size={18} />
+
+            <div className="space-y-1 text-sm text-muted-foreground border-t pt-4">
+              <div className="flex items-center gap-2"><Mail size={14}/> {c.email}</div>
+              <div className="flex items-center gap-2"><Phone size={14}/> {c.phone}</div>
+              <p className="mt-2 text-xs bg-muted p-2 rounded-lg italic">"{c.bio}"</p>
+            </div>
+
+            <Button 
+              variant="destructive" 
+              className="w-full rounded-xl gap-2 mt-2"
+              onClick={async () => {
+                if(confirm(`Deletar ${c.fullName}?`)) {
+                  await deleteDoc(doc(db, "users", c.id));
+                  carregarDados();
+                  toast.success("Removido!");
+                }
+              }}
+            >
+              <Trash2 size={16} /> Excluir Conta
             </Button>
           </div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
