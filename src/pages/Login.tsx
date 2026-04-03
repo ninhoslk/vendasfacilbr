@@ -25,17 +25,17 @@ export default function Login() {
       else await signUp(email, password, "Novo Vendedor");
       navigate("/");
     } catch (error) {
-      toast.error("Erro na autenticação. Verifique os seus dados.");
+      toast.error("Erro na autenticação. Verifique seus dados.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    if (!email) return toast.error("Introduza o seu e-mail para recuperar a senha.");
+    if (!email) return toast.error("Digite seu e-mail para recuperar a senha.");
     try {
       await sendPasswordResetEmail(auth, email);
-      toast.success("E-mail de recuperação enviado! Verifique a sua caixa de entrada.");
+      toast.success("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
     } catch (err) {
       toast.error("Erro ao enviar e-mail. Verifique se o e-mail está correto.");
     }
@@ -46,7 +46,7 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-xl border-none">
         <CardHeader className="space-y-1 text-center border-b mb-4">
           <CardTitle className="text-3xl font-bold text-primary">VendaFácil BR</CardTitle>
-          <CardDescription>Gestão simples para vendedores autónomos</CardDescription>
+          <CardDescription>Gestão simples para vendedores autônomos</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -57,14 +57,14 @@ export default function Login() {
             <div className="flex justify-between items-center">
               <Label>Senha</Label>
               <button onClick={handleResetPassword} type="button" className="text-xs text-primary hover:underline font-medium">
-                Esqueci a minha senha
+                Esqueci minha senha
               </button>
             </div>
             <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-4 pt-4">
             <Button onClick={(e) => handleSubmit(e, 'in')} disabled={loading}>Entrar</Button>
-            <Button onClick={(e) => handleSubmit(e, 'up')} variant="outline" disabled={loading}>Registar</Button>
+            <Button onClick={(e) => handleSubmit(e, 'up')} variant="outline" disabled={loading}>Cadastrar</Button>
           </div>
         </CardContent>
       </Card>
