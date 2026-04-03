@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt, FileBarChart,
-  LogOut, Menu, X, Settings, ShieldCheck
+  LogOut, Menu, X, Sun, Moon, Heart, Settings as SettingsIcon, ShieldCheck
 } from "lucide-react";
+import { Button } from "@/components/ui/button"; // IMPORTAÇÃO QUE FALTOU
 
 export default function AppLayout() {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
-  // APLICAR O TEMA DO USUÁRIO
+  // Carrega a cor personalizada do usuário no carregamento do App
   useEffect(() => {
     const loadUserTheme = async () => {
       if (user) {
@@ -29,15 +32,17 @@ export default function AppLayout() {
 
   const links = [
     { to: "/", label: "Venda Rápida", icon: ShoppingCart },
+    { to: "/visao-geral", label: "Visão Geral", icon: LayoutDashboard },
     { to: "/catalogo", label: "Catálogo", icon: Package },
     { to: "/vendas", label: "Vendas", icon: ShoppingCart },
     { to: "/despesas", label: "Despesas", icon: Receipt },
     { to: "/relatorios", label: "Relatórios", icon: FileBarChart },
-    { to: "/configuracoes", label: "Configurações", icon: Settings },
+    { to: "/configuracoes", label: "Configurações", icon: SettingsIcon },
+    { to: "/doacao", label: "Apoiar Projeto", icon: Heart },
   ];
 
   if (user?.email === 'brenoalves18110@gmail.com') {
-    links.push({ to: "/admin", label: "Admin", icon: ShieldCheck });
+    links.push({ to: "/admin", label: "Painel Admin", icon: ShieldCheck });
   }
 
   return (
@@ -57,15 +62,22 @@ export default function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <Button onClick={() => signOut()} variant="ghost" className="justify-start gap-3 text-destructive hover:bg-destructive/10">
-          <LogOut size={18} /> Sair
-        </Button>
+
+        <div className="mt-auto space-y-2 pt-4 border-t">
+          <Button variant="ghost" onClick={toggleTheme} className="w-full justify-start gap-3">
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === "dark" ? "Modo Claro" : "Modo Escuro"}
+          </Button>
+          <Button onClick={() => signOut()} variant="ghost" className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10">
+            <LogOut size={18} /> Sair
+          </Button>
+        </div>
       </aside>
 
-      {/* Mobile e Main */}
       <div className="flex flex-1 flex-col">
+        {/* Header Mobile */}
         <header className="lg:hidden flex items-center justify-between p-4 border-b bg-card">
-          <span className="font-bold text-primary">VendaFácil</span>
+          <span className="font-bold text-primary text-xl">VendaFácil</span>
           <Button variant="ghost" size="icon" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</Button>
         </header>
         
