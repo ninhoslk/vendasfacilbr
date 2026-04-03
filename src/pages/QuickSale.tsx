@@ -3,7 +3,10 @@ import { useCollection } from "@/hooks/useFirestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { 
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, 
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction 
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export default function QuickSale() {
@@ -43,19 +46,19 @@ export default function QuickSale() {
         <h1 className="text-2xl font-bold italic uppercase tracking-tighter">Venda Rápida</h1>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {products.map((p) => (
           <motion.button
             whileTap={{ scale: 0.95 }}
             key={p.id}
             onClick={() => setSelected(p)}
-            className="flex flex-col items-center p-4 bg-card rounded-3xl border shadow-sm hover:shadow-md transition-all"
+            className="flex flex-col items-center p-4 bg-card rounded-3xl border shadow-sm hover:shadow-md transition-all active:ring-2 ring-primary"
           >
-            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-2 overflow-hidden border">
+            <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mb-2 overflow-hidden border">
               {p.imageUrl ? (
                 <img src={p.imageUrl} className="w-full h-full object-cover" />
               ) : (
-                <ShoppingBag className="text-primary" />
+                <ShoppingBag className="text-muted-foreground" size={24} />
               )}
             </div>
             <span className="font-bold text-center text-sm line-clamp-1">{p.name}</span>
@@ -67,14 +70,14 @@ export default function QuickSale() {
       <AlertDialog open={!!selected} onOpenChange={o => !o && setSelected(null)}>
         <AlertDialogContent className="rounded-3xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Venda</AlertDialogTitle>
-            <AlertDialogDescription>Registrar venda de 1x <b>{selected?.name}</b>?</AlertDialogDescription>
+            <AlertDialogTitle className="text-center">Confirmar Venda</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">Registrar venda de 1x <b>{selected?.name}</b>?</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm} disabled={saving} className="bg-primary">
-              {saving ? "Salvando..." : "Confirmar"}
+          <AlertDialogFooter className="flex-col gap-2">
+            <AlertDialogAction onClick={handleConfirm} disabled={saving} className="bg-primary w-full">
+              {saving ? "Salvando..." : "Confirmar Venda"}
             </AlertDialogAction>
+            <AlertDialogCancel className="w-full border-none">Cancelar</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
