@@ -1,25 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Package, ShoppingCart, Receipt, FileBarChart,
+  LayoutDashboard, Package, Zap, ShoppingCart, Receipt, FileBarChart,
   LogOut, Menu, X, Sun, Moon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
 
 const links = [
-  { to: "/", label: "Visão Geral", icon: LayoutDashboard },
+  { to: "/", label: "Venda Rápida", icon: Zap },
+  { to: "/visao-geral", label: "Visão Geral", icon: LayoutDashboard },
   { to: "/catalogo", label: "Catálogo", icon: Package },
-  { to: "/vendas", label: "Nova Venda", icon: ShoppingCart },
+  { to: "/vendas", label: "Vendas", icon: ShoppingCart },
   { to: "/despesas", label: "Despesas", icon: Receipt },
   { to: "/relatorios", label: "Relatórios", icon: FileBarChart },
 ];
 
 export default function AppLayout() {
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -30,7 +29,7 @@ export default function AppLayout() {
       <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-card p-4">
         <div className="mb-8 flex items-center gap-3 px-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl stat-gradient-blue">
-            <ShoppingCart className="h-5 w-5 text-primary-foreground" />
+            <Zap className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="text-lg font-bold text-foreground">VendaFácil</span>
         </div>
@@ -42,9 +41,7 @@ export default function AppLayout() {
               end={l.to === "/"}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`
               }
             >
@@ -70,7 +67,7 @@ export default function AppLayout() {
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-card/80 backdrop-blur-xl px-4 py-3 lg:hidden">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg stat-gradient-blue">
-              <ShoppingCart className="h-4 w-4 text-primary-foreground" />
+              <Zap className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-bold text-foreground">VendaFácil</span>
           </div>

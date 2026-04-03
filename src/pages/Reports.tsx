@@ -1,15 +1,19 @@
 import React from "react";
-import { useData } from "@/contexts/DataContext";
+import { useCollection } from "@/hooks/useFirestore";
 import { motion } from "framer-motion";
 import { Download, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+interface SaleDoc { id: string; productName: string; quantity: number; totalValue: number; status: string; date: string; userId: string; }
+interface ExpenseDoc { id: string; description: string; amount: number; date: string; userId: string; }
+
 export default function Reports() {
-  const { sales, expenses } = useData();
+  const { data: sales } = useCollection<SaleDoc>("sales");
+  const { data: expenses } = useCollection<ExpenseDoc>("expenses");
 
   const allEntries = [
-    ...sales.map((s) => ({ date: s.date, description: s.itemName, type: "Receita" as const, value: s.totalValue })),
+    ...sales.map((s) => ({ date: s.date, description: s.productName, type: "Receita" as const, value: s.totalValue })),
     ...expenses.map((e) => ({ date: e.date, description: e.description, type: "Despesa" as const, value: -e.amount })),
   ].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -18,7 +22,7 @@ export default function Reports() {
   const exportCSV = () => {
     const header = "Data,Descrição,Tipo,Valor\n";
     const rows = allEntries.map((e) => `${e.date},"${e.description}",${e.type},${e.value}`).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = "relatorio_vendafacil.csv"; a.click();
     URL.revokeObjectURL(url);
@@ -26,7 +30,7 @@ export default function Reports() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
@@ -60,11 +64,11 @@ export default function Reports() {
                     <td className="px-4 py-3 text-foreground">{new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
                     <td className="px-4 py-3 text-foreground">{e.description}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${e.type === "Receita" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${e.type === "Receita" ? "bg-accent/10 text-accent" : "bg-destructive/10 text-destructive"}`}>
                         {e.type}
                       </span>
                     </td>
-                    <td className={`px-4 py-3 text-right font-medium ${e.value >= 0 ? "text-success" : "text-destructive"}`}>{fmt(Math.abs(e.value))}</td>
+                    <td className={`px-4 py-3 text-right font-medium ${e.value >= 0 ? "text-accent" : "text-destructive"}`}>{fmt(Math.abs(e.value))}</td>
                   </tr>
                 ))}
               </tbody>
