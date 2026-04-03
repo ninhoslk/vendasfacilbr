@@ -1,116 +1,90 @@
 import React, { useState } from "react";
 import { useCollection } from "@/hooks/useFirestore";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Pencil, Trash2, Package, Receipt } from "lucide-react";
+import { Plus, Trash2, Camera, Loader2, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-interface CatalogItem {
-  id: string;
-  name: string;
-  price: number;
-  type: "product" | "expense";
-  userId: string;
-}
+import { uploadImage } from "@/lib/imageUpload"; // Certifique-se que este arquivo existe
 
 export default function Catalog() {
-  const { data: catalogItems, add, update, remove } = useCollection<CatalogItem>("catalog");
-  const [tab, setTab] = useState<"product" | "expense">("product");
+  const { user } = useAuth();
+  const { data: items, add, remove } = useCollection<any>(\"catalog\");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
-
-  const items = catalogItems.filter((i) => i.type === tab);
-
-  const openAdd = () => { setEditId(null); setName(""); setPrice(""); setModalOpen(true); };
-  const openEdit = (id: string) => {
-    const item = catalogItems.find((i) => i.id === id);
-    if (!item) return;
-    setEditId(id); setName(item.name); setPrice(String(item.price)); setModalOpen(true);
-  };
+  const [newName, setNewName] = useState(\"\");
+  const [newPrice, setNewPrice] = useState(\"\");
+  const [tempImage, setTempImage] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleSave = async () => {
-    if (!name.trim()) { toast.error("Nome é obrigatório"); return; }
-    const p = parseFloat(price) || 0;
+    if (!newName || !newPrice) return toast.error(\"Preencha todos os campos\");
+    setUploading(true);
+    
+    let imageUrl = \"\";
+    if (tempImage) {
+      imageUrl = await uploadImage(tempImage);
+    }
+
     try {
-      if (editId) {
-        await update(editId, { name: name.trim(), price: p });
-        toast.success("Item atualizado!");
-      } else {
-        await add({ name: name.trim(), price: p, type: tab } as any);
-        toast.success("Item adicionado!");
-      }
+      await add({
+        name: newName,
+        price: parseFloat(newPrice),
+        type: \"product\",
+        imageUrl,
+        userId: user.uid
+      });
       setModalOpen(false);
-    } catch { toast.error("Erro ao salvar"); }
+      setNewName(\"\"); setNewPrice(\"\"); setTempImage(null);
+      toast.success(\"Produto adicionado!\");
+    } catch (e) {
+      toast.error(\"Erro ao salvar produto\");
+    } finally {
+      setUploading(false);
+    }
   };
-
-  const handleDelete = async (id: string) => {
-    try { await remove(id); toast.success("Item removido!"); }
-    catch { toast.error("Erro ao remover"); }
-  };
-
-  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
-    <div className="space-y-6 pb-20">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Catálogo de Itens</h1>
-          <p className="text-sm text-muted-foreground">Pré-cadastre produtos e gastos frequentes</p>
-        </div>
-        <Button onClick={openAdd} className="gap-2">
-          <Plus className="h-4 w-4" /> Adicionar
+    <div className=\"space-y-6\">
+      <div className=\"flex justify-between items-center\">
+        <h1 className=\"text-2xl font-bold\">Catálogo de Produtos</h1>
+        <Button onClick={() => setModalOpen(true)} className=\"gap-2 rounded-full\">
+          <Plus size={18} /> Novo Produto
         </Button>
       </div>
 
-      <div className="flex gap-2">
-        <button onClick={() => setTab("product")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${tab === "product" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-          <Package className="h-4 w-4" /> Meus Produtos
-        </button>
-        <button onClick={() => setTab("expense")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${tab === "expense" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-          <Receipt className="h-4 w-4" /> Gastos Frequentes
-        </button>
+      <div className=\"grid grid-cols-1 md:grid-cols-3 gap-4\">
+        {items.map((item) => (
+          <div key={item.id} className=\"bg-card p-4 rounded-2xl border shadow-sm flex items-center gap-4\">
+            <div className=\"w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0 border\">
+              {item.imageUrl ? <img src={item.imageUrl} className=\"w-full h-full object-cover\" /> : <Package className=\"text-muted-foreground\" />}
+            </div>
+            <div className=\"flex-1\">
+              <h3 className=\"font-bold\">{item.name}</h3>
+              <p className=\"text-primary font-bold\">R$ {item.price.toFixed(2)}</p>
+            </div>
+            <Button variant=\"ghost\" size=\"icon\" onClick={() => remove(item.id)} className=\"text-destructive\"><Trash2 size={18}/></Button>
+          </div>
+        ))}
       </div>
 
-      {items.length === 0 ? (
-        <div className="glass-card rounded-2xl p-12 text-center">
-          <p className="text-muted-foreground">Nenhum item cadastrado. Clique em "Adicionar" para começar.</p>
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence>
-            {items.map((item) => (
-              <motion.div key={item.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                className="glass-card rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">{fmt(item.price)}</p>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => openEdit(item.id)} className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"><Pencil className="h-4 w-4" /></button>
-                  <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"><Trash2 className="h-4 w-4" /></button>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>{editId ? "Editar Item" : "Novo Item"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Brigadeiro Gourmet" className="mt-1" /></div>
-            <div><Label>{tab === "product" ? "Preço Padrão (R$)" : "Custo Padrão (R$)"}</Label><Input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" className="mt-1" /></div>
-            <Button onClick={handleSave} className="w-full">Salvar</Button>
+        <DialogContent className=\"rounded-3xl\">
+          <DialogHeader><DialogTitle>Cadastrar Produto</DialogTitle></DialogHeader>
+          <div className=\"space-y-4 pt-4 text-center\">
+             <label className=\"w-24 h-24 mx-auto border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted overflow-hidden\">
+                {tempImage ? <img src={URL.createObjectURL(tempImage)} className=\"w-full h-full object-cover\" /> : <><Camera className=\"text-muted-foreground\"/><span className=\"text-xs\">Foto</span></>}
+                <input type=\"file\" className=\"hidden\" onChange={e => setTempImage(e.target.files?.[0] || null)} accept=\"image/*\" />
+             </label>
+             <div className=\"text-left space-y-4\">
+               <div><Label>Nome do Produto</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
+               <div><Label>Preço de Venda (R$)</Label><Input type=\"number\" value={newPrice} onChange={e => setNewPrice(e.target.value)} /></div>
+             </div>
+             <Button onClick={handleSave} className=\"w-full\" disabled={uploading}>
+               {uploading ? <Loader2 className=\"animate-spin mr-2\"/> : \"Salvar Produto\"}
+             </Button>
           </div>
         </DialogContent>
       </Dialog>
