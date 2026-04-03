@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Package, Zap, ShoppingCart, Receipt, FileBarChart,
-  LogOut, Menu, X, Sun, Moon,
+  LogOut, Menu, X, Sun, Moon, Heart, ShieldAlert
 } from "lucide-react";
 
 const links = [
@@ -15,6 +15,8 @@ const links = [
   { to: "/vendas", label: "Vendas", icon: ShoppingCart },
   { to: "/despesas", label: "Despesas", icon: Receipt },
   { to: "/relatorios", label: "Relatórios", icon: FileBarChart },
+  { to: "/doacao", label: "Apoiar Projeto", icon: Heart },
+  { to: "/admin", label: "Painel Admin", icon: ShieldAlert },
 ];
 
 export default function AppLayout() {
