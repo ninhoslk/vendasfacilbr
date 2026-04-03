@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { ShieldAlert, Users, Trash2, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 
-const ADMIN_EMAIL = "seuemail@gmail.com";
+const ADMIN_EMAIL = "brenoalves18110@gmail.com";
 
 export default function Admin() {
   const { user } = useAuth();
