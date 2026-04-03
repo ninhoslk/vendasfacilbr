@@ -1,73 +1,103 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { db, auth } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 
 export default function Login() {
+  const { user, signIn, signUp } = useAuth();
+
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
-  const navigate = useNavigate();
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent, type: 'in' | 'up') => {
-    e.preventDefault();
-    if (!email || !password) return toast.error("Preencha todos os campos.");
-    setLoading(true);
-    try {
-      if (type === 'in') await signIn(email, password);
-      else await signUp(email, password, "Novo Vendedor");
-      navigate("/");
-    } catch (error) {
-      toast.error("Erro na autenticação. Verifique seus dados.");
-    } finally {
-      setLoading(false);
-    }
+  if (user) return <Navigate to="/" />;
+
+  const resetPassword = async () => {
+    if (!email) return toast.error("Digite o email");
+    await sendPasswordResetEmail(auth, email);
+    toast.success("Email enviado");
   };
 
-  const handleResetPassword = async () => {
-    if (!email) return toast.error("Digite seu e-mail para recuperar a senha.");
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+
     try {
-      await sendPasswordResetEmail(auth, email);
-      toast.success("E-mail de recuperação enviado!");
-    } catch (err) {
-      toast.error("Erro ao enviar e-mail.");
+      if (isLogin) {
+        await signIn(email, password);
+      } else {
+        const cred = await signUp(email, password);
+
+        await setDoc(doc(db, "users", cred.user.uid), {
+          uid: cred.user.uid,
+          email,
+          fullName,
+          phone,
+          createdAt: new Date().toISOString(),
+        });
+
+        toast.success("Conta criada!");
+      }
+    } catch {
+      toast.error("Erro");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
-      <Card className="w-full max-w-md shadow-xl border-none">
-        <CardHeader className="space-y-1 text-center border-b mb-4">
-          <CardTitle className="text-3xl font-bold text-primary">VendaFácil BR</CardTitle>
-          <CardDescription>Gestão simples para vendedores autônomos</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>E-mail</Label>
-            <Input type="email" placeholder="exemplo@email.com" value={email} onChange={e => setEmail(e.target.value)} />
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="p-6 border rounded-xl w-full max-w-md">
+        <img src="/logo.png" className="h-16 mx-auto mb-4" />
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {!isLogin && (
+            <>
+              <div>
+                <Label>Nome</Label>
+                <Input onChange={(e) => setFullName(e.target.value)} />
+              </div>
+
+              <div>
+                <Label>Telefone</Label>
+                <Input onChange={(e) => setPhone(e.target.value)} />
+              </div>
+            </>
+          )}
+
+          <div>
+            <Label>Email</Label>
+            <Input onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label>Senha</Label>
-              <button onClick={handleResetPassword} type="button" className="text-xs text-primary hover:underline font-medium">
-                Esqueci minha senha
-              </button>
-            </div>
-            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+
+          {isLogin && (
+            <button type="button" onClick={resetPassword}>
+              Esqueci senha
+            </button>
+          )}
+
+          <div>
+            <Label>Senha</Label>
+            <Input
+              type="password"
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
-          <div className="grid grid-cols-2 gap-4 pt-4">
-            <Button onClick={(e) => handleSubmit(e, 'in')} disabled={loading}>Entrar</Button>
-            <Button onClick={(e) => handleSubmit(e, 'up')} variant="outline" disabled={loading}>Cadastrar</Button>
-          </div>
-        </CardContent>
-      </Card>
+
+          <Button className="w-full">
+            {isLogin ? "Entrar" : "Criar conta"}
+          </Button>
+        </form>
+
+        <button onClick={() => setIsLogin(!isLogin)} className="mt-4 text-sm">
+          {isLogin ? "Criar conta" : "Já tenho conta"}
+        </button>
+      </div>
     </div>
   );
 }
