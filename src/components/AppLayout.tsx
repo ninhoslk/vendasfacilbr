@@ -28,7 +28,7 @@ export default function AppLayout() {
     <div className="flex min-h-screen bg-background">
       <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-card p-4">
         <div className="mb-8 flex items-center gap-3 px-2">
-          {/* SUA IMAGEM NO LUGAR DO RAIO */}
+          {/* SUA LOGO NO LUGAR DO RAIO */}
           <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain rounded-lg" />
           <span className="text-lg font-bold text-foreground">VendaFácil</span>
         </div>
