@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 
-const ADMIN_EMAIL = "seuemail@gmail.com";
+const ADMIN_EMAIL = "brenoalves18110@gmail.com";
 
 export default function Admin() {
   const { user } = useAuth();
