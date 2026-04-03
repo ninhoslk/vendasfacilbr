@@ -35,9 +35,9 @@ export default function Login() {
     if (!email) return toast.error("Digite seu e-mail para recuperar a senha.");
     try {
       await sendPasswordResetEmail(auth, email);
-      toast.success("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+      toast.success("E-mail de recuperação enviado!");
     } catch (err) {
-      toast.error("Erro ao enviar e-mail. Verifique se o e-mail está correto.");
+      toast.error("Erro ao enviar e-mail.");
     }
   };
 
