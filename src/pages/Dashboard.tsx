@@ -1,13 +1,16 @@
 import React from "react";
-import { useData } from "@/contexts/DataContext";
+import { useCollection } from "@/hooks/useFirestore";
 import { motion } from "framer-motion";
-import { DollarSign, TrendingDown, TrendingUp, ShoppingCart } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { DollarSign, TrendingDown, TrendingUp, ShoppingCart, Clock } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const COLORS = ["#0EA5E9", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
+interface SaleDoc { id: string; productName: string; quantity: number; totalValue: number; status: string; date: string; userId: string; }
+interface ExpenseDoc { id: string; description: string; amount: number; date: string; userId: string; }
 
 export default function Dashboard() {
-  const { sales, expenses } = useData();
+  const { data: sales } = useCollection<SaleDoc>("sales");
+  const { data: expenses } = useCollection<ExpenseDoc>("expenses");
+
   const now = new Date();
   const month = now.getMonth();
   const year = now.getFullYear();
@@ -16,22 +19,23 @@ export default function Dashboard() {
   const monthSales = sales.filter((s) => { const d = new Date(s.date); return d.getMonth() === month && d.getFullYear() === year; });
   const monthExpenses = expenses.filter((e) => { const d = new Date(e.date); return d.getMonth() === month && d.getFullYear() === year; });
   const todaySales = sales.filter((s) => s.date === today);
+  const pendingSales = sales.filter((s) => s.status === "Pendente");
 
   const totalRevenue = monthSales.reduce((a, s) => a + s.totalValue, 0);
   const totalExpenses = monthExpenses.reduce((a, e) => a + e.amount, 0);
   const profit = totalRevenue - totalExpenses;
   const todayRevenue = todaySales.reduce((a, s) => a + s.totalValue, 0);
+  const pendingTotal = pendingSales.reduce((a, s) => a + s.totalValue, 0);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const stats = [
-    { label: "Receitas do Mês", value: fmt(totalRevenue), icon: DollarSign, gradient: "stat-gradient-blue" },
+    { label: "Vendas Hoje", value: fmt(todayRevenue), icon: ShoppingCart, gradient: "stat-gradient-blue" },
+    { label: "A Receber (Pendentes)", value: fmt(pendingTotal), icon: Clock, gradient: "stat-gradient-amber" },
     { label: "Despesas do Mês", value: fmt(totalExpenses), icon: TrendingDown, gradient: "stat-gradient-red" },
     { label: "Lucro Líquido", value: fmt(profit), icon: TrendingUp, gradient: "stat-gradient-green" },
-    { label: "Vendas Hoje", value: fmt(todayRevenue), icon: ShoppingCart, gradient: "stat-gradient-amber" },
   ];
 
-  // Bar chart data - last 7 days
   const barData = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i));
     const key = d.toISOString().split("T")[0];
@@ -41,13 +45,8 @@ export default function Dashboard() {
     return { name: label, Receitas: rev, Despesas: exp };
   });
 
-  // Pie chart data
-  const catMap: Record<string, number> = {};
-  monthExpenses.forEach((e) => { catMap[e.categoryName] = (catMap[e.categoryName] || 0) + e.amount; });
-  const pieData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
         <p className="text-sm text-muted-foreground">Resumo do seu negócio este mês</p>
@@ -68,39 +67,20 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          className="glass-card rounded-2xl p-5">
-          <h3 className="mb-4 font-semibold text-foreground">Receitas vs Despesas (7 dias)</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-              <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 13 }} />
-              <Bar dataKey="Receitas" fill="#0EA5E9" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="Despesas" fill="#EF4444" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          className="glass-card rounded-2xl p-5">
-          <h3 className="mb-4 font-semibold text-foreground">Despesas por Categoria</h3>
-          {pieData.length === 0 ? (
-            <div className="flex h-[260px] items-center justify-center text-muted-foreground text-sm">Sem despesas este mês</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip formatter={(v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </motion.div>
-      </div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+        className="glass-card rounded-2xl p-5">
+        <h3 className="mb-4 font-semibold text-foreground">Receitas vs Despesas (7 dias)</h3>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={barData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+            <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+            <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 13 }} />
+            <Bar dataKey="Receitas" fill="hsl(199, 89%, 48%)" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="Despesas" fill="hsl(0, 84%, 60%)" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
     </div>
   );
 }

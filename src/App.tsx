@@ -4,11 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { DataProvider } from "@/contexts/DataContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Login from "@/pages/Login";
+import QuickSale from "@/pages/QuickSale";
 import Dashboard from "@/pages/Dashboard";
 import Catalog from "@/pages/Catalog";
 import Sales from "@/pages/Sales";
@@ -26,19 +26,18 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <DataProvider>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/catalogo" element={<Catalog />} />
-                  <Route path="/vendas" element={<Sales />} />
-                  <Route path="/despesas" element={<Expenses />} />
-                  <Route path="/relatorios" element={<Reports />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </DataProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route path="/" element={<QuickSale />} />
+                <Route path="/visao-geral" element={<Dashboard />} />
+                <Route path="/catalogo" element={<Catalog />} />
+                <Route path="/vendas" element={<Sales />} />
+                <Route path="/despesas" element={<Expenses />} />
+                <Route path="/relatorios" element={<Reports />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

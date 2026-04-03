@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useData } from "@/contexts/DataContext";
+import { useCollection } from "@/hooks/useFirestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Pencil, Trash2, Package, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
+interface CatalogItem {
+  id: string;
+  name: string;
+  price: number;
+  type: "product" | "expense";
+  userId: string;
+}
+
 export default function Catalog() {
-  const { catalogItems, addCatalogItem, updateCatalogItem, deleteCatalogItem } = useData();
+  const { data: catalogItems, add, update, remove } = useCollection<CatalogItem>("catalog");
   const [tab, setTab] = useState<"product" | "expense">("product");
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -22,32 +30,39 @@ export default function Catalog() {
   const openEdit = (id: string) => {
     const item = catalogItems.find((i) => i.id === id);
     if (!item) return;
-    setEditId(id); setName(item.name); setPrice(String(item.defaultPrice)); setModalOpen(true);
+    setEditId(id); setName(item.name); setPrice(String(item.price)); setModalOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) { toast.error("Nome é obrigatório"); return; }
     const p = parseFloat(price) || 0;
-    if (editId) {
-      updateCatalogItem(editId, { name: name.trim(), defaultPrice: p });
-      toast.success("Item atualizado!");
-    } else {
-      addCatalogItem({ name: name.trim(), defaultPrice: p, type: tab });
-      toast.success("Item adicionado!");
-    }
-    setModalOpen(false);
+    try {
+      if (editId) {
+        await update(editId, { name: name.trim(), price: p });
+        toast.success("Item atualizado!");
+      } else {
+        await add({ name: name.trim(), price: p, type: tab } as any);
+        toast.success("Item adicionado!");
+      }
+      setModalOpen(false);
+    } catch { toast.error("Erro ao salvar"); }
   };
 
-  const handleDelete = (id: string) => { deleteCatalogItem(id); toast.success("Item removido!"); };
+  const handleDelete = async (id: string) => {
+    try { await remove(id); toast.success("Item removido!"); }
+    catch { toast.error("Erro ao remover"); }
+  };
+
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Catálogo de Itens</h1>
           <p className="text-sm text-muted-foreground">Pré-cadastre produtos e gastos frequentes</p>
         </div>
-        <Button onClick={openAdd} className="bg-primary text-primary-foreground gap-2">
+        <Button onClick={openAdd} className="gap-2">
           <Plus className="h-4 w-4" /> Adicionar
         </Button>
       </div>
@@ -75,9 +90,7 @@ export default function Catalog() {
                 className="glass-card rounded-2xl p-4 flex items-center justify-between">
                 <div>
                   <p className="font-medium text-foreground">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.defaultPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{fmt(item.price)}</p>
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => openEdit(item.id)} className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"><Pencil className="h-4 w-4" /></button>
@@ -96,8 +109,8 @@ export default function Catalog() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Brigadeiro Gourmet" className="mt-1" /></div>
-            <div><Label>{tab === "product" ? "Preço Padrão" : "Custo Padrão"}</Label><Input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" className="mt-1" /></div>
-            <Button onClick={handleSave} className="w-full bg-primary text-primary-foreground">Salvar</Button>
+            <div><Label>{tab === "product" ? "Preço Padrão (R$)" : "Custo Padrão (R$)"}</Label><Input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" className="mt-1" /></div>
+            <Button onClick={handleSave} className="w-full">Salvar</Button>
           </div>
         </DialogContent>
       </Dialog>
