@@ -6,9 +6,9 @@ import { Heart, Copy, CheckCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
 // === COLOQUE SUAS INFORMAÇÕES DO PIX AQUI ===
-const CHAVE_PIX = "seu-email-ou-cpf-aqui"; 
-const NOME_RECEBEDOR = "Seu Nome Completo";
-const CIDADE_RECEBEDOR = "Sua Cidade";
+const CHAVE_PIX = "44840223890"; 
+const NOME_RECEBEDOR = "Breno Barbudo Alves";
+const CIDADE_RECEBEDOR = "Dracena";
 
 const Doacao = () => {
   const [valor, setValor] = useState<string>("10.00");
