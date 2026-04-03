@@ -7,7 +7,7 @@ import { ShieldAlert, Users, Trash2, Mail, Phone, ExternalLink } from "lucide-re
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-const ADMIN_EMAIL = "seuemail@gmail.com"; // COLOQUE SEU EMAIL AQUI
+const ADMIN_EMAIL = "brenoalves18110@gmail.com"; // COLOQUE SEU EMAIL AQUI
 
 export default function Admin() {
   const { user } = useAuth();
