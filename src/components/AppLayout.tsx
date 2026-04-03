@@ -9,17 +9,16 @@ import {
   LayoutDashboard, Package, ShoppingCart, Receipt, FileBarChart,
   LogOut, Menu, X, Sun, Moon, Heart, Settings as SettingsIcon, ShieldCheck
 } from "lucide-react";
-import { Button } from "@/components/ui/button"; // IMPORTAÇÃO QUE FALTOU
+import { Button } from "@/components/ui/button";
 
 export default function AppLayout() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
-  const location = useLocation();
 
-  // Carrega a cor personalizada do usuário no carregamento do App
+  // Busca a cor personalizada do usuário e aplica no CSS
   useEffect(() => {
-    const loadUserTheme = async () => {
+    const loadTheme = async () => {
       if (user) {
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists() && snap.data().themeColor) {
@@ -27,7 +26,7 @@ export default function AppLayout() {
         }
       }
     };
-    loadUserTheme();
+    loadTheme();
   }, [user]);
 
   const links = [
@@ -49,14 +48,24 @@ export default function AppLayout() {
     <div className="flex min-h-screen bg-background">
       {/* Sidebar Desktop */}
       <aside className="hidden lg:flex w-64 flex-col border-r bg-card p-4">
-        <div className="mb-8 p-4 font-bold text-2xl text-primary tracking-tight">VendaFácil</div>
+        <div className="mb-8 flex items-center gap-3 px-2">
+          <div className="p-2 bg-primary/10 rounded-lg">
+             <FileBarChart className="text-primary" size={24} />
+          </div>
+          <span className="text-xl font-bold tracking-tight">VendaFácil</span>
+        </div>
+
         <nav className="flex-1 space-y-1">
           {links.map((l) => (
             <NavLink
               key={l.to}
               to={l.to}
               end={l.to === "/"}
-              className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-muted"}`}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                  isActive ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:bg-muted"
+                }`
+              }
             >
               <l.icon size={20} /> {l.label}
             </NavLink>
@@ -68,16 +77,19 @@ export default function AppLayout() {
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             {theme === "dark" ? "Modo Claro" : "Modo Escuro"}
           </Button>
-          <Button onClick={() => signOut()} variant="ghost" className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10">
+          <Button onClick={() => signOut()} variant="ghost" className="w-full justify-start gap-3 text-destructive font-medium">
             <LogOut size={18} /> Sair
           </Button>
         </div>
       </aside>
 
+      {/* Layout Mobile e Main */}
       <div className="flex flex-1 flex-col">
-        {/* Header Mobile */}
         <header className="lg:hidden flex items-center justify-between p-4 border-b bg-card">
-          <span className="font-bold text-primary text-xl">VendaFácil</span>
+          <div className="flex items-center gap-2">
+            <FileBarChart className="text-primary" size={24} />
+            <span className="font-bold text-primary text-xl tracking-tight">VendaFácil</span>
+          </div>
           <Button variant="ghost" size="icon" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</Button>
         </header>
         
@@ -85,7 +97,9 @@ export default function AppLayout() {
           {open && (
             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="lg:hidden bg-card border-b overflow-hidden px-4 py-2">
                {links.map((l) => (
-                <NavLink key={l.to} to={l.to} onClick={() => setOpen(false)} className="flex items-center gap-3 p-3 text-sm font-medium">{l.label}</NavLink>
+                <NavLink key={l.to} to={l.to} onClick={() => setOpen(false)} className="flex items-center gap-3 p-3 text-sm font-medium text-muted-foreground">
+                  <l.icon size={18}/> {l.label}
+                </NavLink>
                ))}
             </motion.div>
           )}
