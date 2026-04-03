@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TrendingUp, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { TrendingUp, Mail, Lock, Eye, EyeOff, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function Login() {
   const { user, signIn, signUp } = useAuth();
@@ -17,6 +19,19 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   if (user) return <Navigate to="/" replace />;
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast.error("Digite seu e-mail primeiro para recuperar a senha");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast.success("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+    } catch (err: any) {
+      toast.error("Erro ao enviar e-mail. Verifique se o endereço está correto.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,9 +66,7 @@ export default function Login() {
               <TrendingUp className="h-8 w-8 text-primary-foreground" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">VendaFácil</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Gerencie suas vendas com facilidade
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Gerencie suas vendas com facilidade</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,6 +77,13 @@ export default function Login() {
                 <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
               </div>
             </div>
+            {isLogin && (
+              <div className="flex justify-end">
+                <button type="button" onClick={handleResetPassword} className="text-xs text-primary hover:underline flex items-center gap-1">
+                  <HelpCircle className="h-3 w-3" /> Esqueci minha senha
+                </button>
+              </div>
+            )}
             <div>
               <Label htmlFor="password">Senha</Label>
               <div className="relative mt-1">
