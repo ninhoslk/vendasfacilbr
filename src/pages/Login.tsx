@@ -41,7 +41,6 @@ export default function Login() {
         await signIn(email, password);
       } else {
         const userCredential = await signUp(email, password);
-        // SALVANDO NO BANCO DE DADOS SEMPRE NO CADASTRO
         await setDoc(doc(db, "users", userCredential.user.uid), {
           uid: userCredential.user.uid,
           email: email.toLowerCase(),
@@ -52,7 +51,7 @@ export default function Login() {
         toast.success("Conta criada com sucesso!");
       }
     } catch (err: any) {
-      toast.error("Erro. Verifique os dados e tente novamente.");
+      toast.error("Erro na autenticação. Verifique os dados.");
     }
     setLoading(false);
   };
